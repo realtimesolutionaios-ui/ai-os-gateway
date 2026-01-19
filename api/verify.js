@@ -1,35 +1,36 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-  const { licenseKey } = req.body;
+module.exports = async function handler(req, res) {
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-  if (!licenseKey) {
-    return res.status(400).json({ valid: false, error: 'No license key' });
-  }
+    const { licenseKey } = req.body;
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+    if (!licenseKey) {
+      return res.status(400).json({ valid: false });
+    }
 
-  const { data, error } = await supabase
-    .from('licenses')
-    .select('license_key')
-    .eq('license_key', licenseKey)
-    .maybeSingle();
+    const { data, error } = await supabase
+      .from('licenses')
+      .select('license_key')
+      .eq('license_key', licenseKey)
+      .single();
 
-  if (error) {
-    console.error(error);
+    if (error || !data) {
+      return res.status(401).json({ valid: false });
+    }
+
+    return res.status(200).json({ valid: true });
+
+  } catch (e) {
+    console.error('VERIFY ERROR:', e);
     return res.status(500).json({ valid: false });
   }
-
-  if (data) {
-    return res.status(200).json({ valid: true });
-  } else {
-    return res.status(401).json({ valid: false });
-  }
-}
+};
