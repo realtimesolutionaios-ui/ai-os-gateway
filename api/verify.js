@@ -28,9 +28,8 @@ module.exports = async function handler(req, res) {
     }
 
     return res.status(200).json({ valid: true });
-
-  } catch (err) {
-    console.error('VERIFY ERROR:', err);
-    return res.status(500).json({ valid: false, error: 'Server error' });
+  } catch (e) {
+    console.error('VERIFY ERROR:', e);
+    return res.status(500).json({ valid: false });
   }
 };
