@@ -6,17 +6,17 @@ const supabase = createClient(
 );
 
 module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { licenseKey } = req.body || {};
+
+  if (!licenseKey) {
+    return res.status(400).json({ valid: false, error: 'licenseKey missing' });
+  }
+
   try {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const { licenseKey } = req.body;
-
-    if (!licenseKey) {
-      return res.status(400).json({ valid: false });
-    }
-
     const { data, error } = await supabase
       .from('licenses')
       .select('license_key')
@@ -29,8 +29,8 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ valid: true });
 
-  } catch (e) {
-    console.error('VERIFY ERROR:', e);
+  } catch (err) {
+    console.error('VERIFY ERROR:', err);
     return res.status(500).json({ valid: false });
   }
 };
