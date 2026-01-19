@@ -6,30 +6,34 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
   try {
-    const { licenseKey } = req.body;
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
+    const { licenseKey } = req.body || {};
     if (!licenseKey) {
-      return res.status(400).json({ valid: false, error: 'No license key' });
+      return res.status(400).json({ error: 'licenseKey required' });
     }
 
     const { data, error } = await supabase
       .from('licenses')
-      .select('id')
+      .select('license_key')
       .eq('license_key', licenseKey)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ error: 'DB error' });
+    }
+
+    if (!data) {
       return res.status(401).json({ valid: false });
     }
 
     return res.status(200).json({ valid: true });
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({ valid: false });
+    console.error('Fatal error:', e);
+    return res.status(500).json({ error: 'Internal error' });
   }
 }
